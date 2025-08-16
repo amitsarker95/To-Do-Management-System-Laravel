@@ -1,0 +1,47 @@
+# Laravel specific
+/vendor
+/node_modules
+/public/storage
+/storage/*.key
+.env
+.env.*
+.phpunit.result.cache
+
+# Laravel Mix / Vite
+/public/hot
+/public/build
+/public/css
+/public/js
+
+# IDE / Editor files
+/.idea
+/.vscode
+/.fleet
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Composer PHAR
+composer.phar
+
+# NPM / Yarn logs
+npm-debug.log
+yarn-error.log
+
+# PHPUnit / Testing
+.phpunit.cache
+
+# Backup files
+*.bak
+*.backup
+*.swp
+
+# Homestead
+Homestead.yaml
+Homestead.json
+
+# Other configs
+auth.json
+
+
