@@ -68,9 +68,9 @@
                             <tbody>
                                 @foreach ($todos as $t)
                                     <tr>
-                                        <td class="p-2 border">{{ $t['id'] }}</td>
-                                        <td class="p-2 border">{{ $t['title'] }}</td>
-                                        <td class="p-2 border">{{ $t['description'] }}</td>
+                                        <td class="p-2 border">{{ $t->id }}</td>
+                                        <td class="p-2 border">{{ $t->title }}</td>
+                                        <td class="p-2 border">{{ $t->description }}</td>
                                         <td class="p-2 border">
                                             <span class="px-2 py-1 rounded text-sm {{ $t['status']==='done' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' }}">
                                                 {{ ucfirst($t['status']) }}

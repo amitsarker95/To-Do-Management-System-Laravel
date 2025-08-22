@@ -3,92 +3,79 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TodoRequest;
-use App\Services\TodoSessionStore;
+use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TodoController extends Controller
 {
-    private TodoSessionStore $store;
-
     public function __construct()
     {
         $this->middleware('auth');
-        $this->store = new TodoSessionStore(auth()->id());
     }
 
     public function index(Request $request)
     {
-        $todos = $this->store->all();
+        $todos = Task::where('user_id', Auth::id())->get();
         $theme = $request->cookie('theme', 'light');
+
         return view('todos.index', compact('todos', 'theme'));
     }
 
     public function store(TodoRequest $request)
     {
-        $todos = $this->store->all();
-
-        $todos[] = [
-            'id'          => $this->store->nextId(),
-            'title'       => $request->title,
+        Task::create([
+            'title' => $request->title,
             'description' => $request->description,
-            'status'      => 'pending',
-        ];
+            'status' => 'Pending',
+            'user_id' => Auth::id(),
+        ]);
 
-        $this->store->putAll($todos);
-        return back()->with('success', 'Task added!');
+        return redirect()->route('todos.index')->with('success', 'Task created successfully!');
     }
 
-    public function edit(int $id, Request $request)
+    public function edit(Task $todo, Request $request)
     {
-        $todo = $this->store->find($id);
-        abort_if(!$todo, 404);
+        $this->authorize('update', $todo);
         $theme = $request->cookie('theme', 'light');
         return view('todos.edit', compact('todo', 'theme'));
     }
 
-    public function update(TodoRequest $request, int $id)
+
+    public function update(TodoRequest $request, Task $todo)
     {
-        $todos = $this->store->all();
+        $this->authorize('update', $todo);
 
-        foreach ($todos as &$t) {
-            if ($t['id'] === $id) {
-                $t['title'] = $request->title;
-                $t['description'] = $request->description;
-                // Update status
-                $t['status'] = in_array($request->status, ['pending', 'done', 'Completed']) 
-                                ? $request->status 
-                                : 'pending';
-                break;
-            }
-        }
+        $todo->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'status' => $request->status ?? $todo->status,
+        ]);
 
-        $this->store->putAll($todos);
-        return redirect()->route('todos.index')->with('success', 'Task updated!');
+        return redirect()->route('todos.index')->with('success', 'Task updated successfully!');
     }
 
-    public function destroy(int $id)
-    {
-        $filtered = array_values(array_filter($this->store->all(), fn ($t) => $t['id'] !== $id));
-        $this->store->putAll($filtered);
-        return back()->with('success', 'Task deleted!');
-    }
+public function destroy(Task $todo)
+{
+    $this->authorize('delete', $todo);
+    $todo->delete();
 
-    public function toggle(int $id)
-    {
-        $todos = $this->store->all();
-        foreach ($todos as &$t) {
-            if ($t['id'] === $id) {
-                $t['status'] = $t['status'] === 'done' ? 'pending' : 'done';
-                break;
-            }
-        }
-        $this->store->putAll($todos);
-        return back()->with('success', 'Status changed!');
-    }
+    return redirect()->route('todos.index')->with('success', 'Task deleted successfully!');
+}
+
+public function toggle(Task $todo)
+{
+    $this->authorize('update', $todo);
+    $todo->status = $todo->status === 'Pending' ? 'Completed' : 'Pending';
+    $todo->save();
+
+    return redirect()->route('todos.index')->with('success', 'Task status changed!');
+
+}
 
     public function clearAll()
     {
-        $this->store->putAll([]);
+        Task::where('user_id', Auth::id())->delete();
         return back()->with('success', 'All tasks cleared!');
     }
 }
