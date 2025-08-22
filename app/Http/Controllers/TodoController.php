@@ -16,10 +16,10 @@ class TodoController extends Controller
 
     public function index(Request $request)
     {
-        $todos = Task::where('user_id', Auth::id())->get();
-        $theme = $request->cookie('theme', 'light');
+    $todos = Task::where('user_id', Auth::id())->paginate(10); 
+    $theme = $request->cookie('theme', 'light');
 
-        return view('todos.index', compact('todos', 'theme'));
+    return view('todos.index', compact('todos', 'theme'));
     }
 
     public function store(TodoRequest $request)
