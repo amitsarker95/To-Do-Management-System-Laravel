@@ -1,11 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl leading-tight">To-Dos (Session)</h2>
-            <form method="POST" action="{{ route('theme.toggle') }}">
-                @csrf
-                <button class="px-3 py-1 rounded border">Toggle Theme ({{ $theme }})</button>
-            </form>
+            <h2 class="font-semibold text-xl leading-tight">To-Dos</h2>
+            
+            {{-- Theme Toggle --}}
+            {!! Form::open(['route' => 'theme.toggle', 'method' => 'POST']) !!}
+                <button class="px-3 py-1 rounded border">
+                    Toggle Theme ({{ $theme }})
+                </button>
+            {!! Form::close() !!}
         </div>
     </x-slot>
 
@@ -13,45 +16,52 @@
 
     <div class="py-6 {{ $isDark ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900' }}">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+            
+            {{-- Success Message --}}
             @if(session('success'))
                 <div class="mb-4 p-3 border rounded {{ $isDark ? 'bg-gray-800 border-gray-700' : 'bg-green-50 border-green-300' }}">
                     {{ session('success') }}
                 </div>
             @endif
 
+            {{-- Add Task Form --}}
             <div class="p-6 mb-6 rounded shadow {{ $isDark ? 'bg-gray-800' : 'bg-white' }}">
                 <h3 class="text-lg font-semibold mb-3">Add Task</h3>
-                <form method="POST" action="{{ route('todos.store') }}" class="space-y-3">
-                    @csrf
+
+                {!! Form::open(['route' => 'todos.store', 'class' => 'space-y-3']) !!}
                     <div>
-                        <label class="block mb-1">Title <span class="text-red-500">*</span></label>
-                        <input name="title" value="{{ old('title') }}" class="w-full px-3 py-2 rounded border {{ $isDark ? 'bg-gray-900 border-gray-700' : '' }}">
+                        {!! Form::label('title', 'Title') !!} <span class="text-red-500">*</span>
+                        {!! Form::text('title', old('title'), [
+                            'class' => 'w-full px-3 py-2 rounded border ' . ($isDark ? 'bg-gray-900 border-gray-700' : '')
+                        ]) !!}
                         @error('title') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label class="block mb-1">Description (optional)</label>
-                        <textarea name="description" rows="3" class="w-full px-3 py-2 rounded border {{ $isDark ? 'bg-gray-900 border-gray-700' : '' }}">{{ old('description') }}</textarea>
+                        {!! Form::label('description', 'Description (optional)') !!}
+                        {!! Form::textarea('description', old('description'), [
+                            'rows' => 3,
+                            'class' => 'w-full px-3 py-2 rounded border ' . ($isDark ? 'bg-gray-900 border-gray-700' : '')
+                        ]) !!}
                         @error('description') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                     <!-- Add this button -->
-                    <button type="submit" style="background-color: blue" class="px-4 py-2 bg-blue-500 text-white rounded">
-                        Add Task
-                    </button>
-                </form>
+                    {!! Form::submit('Add Task', ['class' => 'px-4 py-2 bg-blue-500 text-white rounded pointer']) !!}
+                {!! Form::close() !!}
             </div>
 
+            {{-- Tasks Table --}}
             <div class="p-6 rounded shadow {{ $isDark ? 'bg-gray-800' : 'bg-white' }}">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-lg font-semibold">Tasks</h3>
-                    <form method="POST" action="{{ route('todos.clear') }}" onsubmit="return confirm('Clear all tasks?')">
-                        @csrf @method('DELETE')
+
+                    {{-- Clear All --}}
+                    {!! Form::open(['route' => 'todos.clear', 'method' => 'DELETE', 'onsubmit' => "return confirm('Clear all tasks?')"]) !!}
                         <button class="px-3 py-1 rounded border">Clear All</button>
-                    </form>
+                    {!! Form::close() !!}
                 </div>
 
-                @if (count($todos) === 0)
+                @if ($todos->isEmpty())
                     <p>No tasks yet.</p>
                 @else
                     <div class="overflow-x-auto">
@@ -72,21 +82,22 @@
                                         <td class="p-2 border">{{ $t->title }}</td>
                                         <td class="p-2 border">{{ $t->description }}</td>
                                         <td class="p-2 border">
-                                            <span class="px-2 py-1 rounded text-sm {{ $t['status']==='done' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' }}">
-                                                {{ ucfirst($t['status']) }}
+                                            <span class="px-2 py-1 rounded text-sm {{ $t->status === 'Completed' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' }}">
+                                                {{ ucfirst($t->status) }}
                                             </span>
                                         </td>
                                         <td class="p-2 border">
                                             <div class="flex gap-2">
-                                                <a href="{{ route('todos.edit', $t['id']) }}" class="px-2 py-1 rounded border">Edit</a>
-                                                <form method="POST" action="{{ route('todos.toggle', $t['id']) }}">
-                                                    @csrf @method('PATCH')
+                                                {{-- Edit --}}
+                                                <a href="{{ route('todos.edit', $t->id) }}" class="px-2 py-1 rounded border">Edit</a>
+                                                {{-- Toggle --}}
+                                                {!! Form::open(['route' => ['todos.toggle', $t->id], 'method' => 'PATCH']) !!}
                                                     <button class="px-2 py-1 rounded border">Toggle</button>
-                                                </form>
-                                                <form method="POST" action="{{ route('todos.destroy', $t['id']) }}" onsubmit="return confirm('Delete this task?')">
-                                                    @csrf @method('DELETE')
+                                                {!! Form::close() !!}
+                                                {{-- Delete --}}
+                                                {!! Form::open(['route' => ['todos.destroy', $t->id], 'method' => 'DELETE', 'onsubmit' => "return confirm('Delete this task?')"]) !!}
                                                     <button class="px-2 py-1 rounded border">Delete</button>
-                                                </form>
+                                                {!! Form::close() !!}
                                             </div>
                                         </td>
                                     </tr>
