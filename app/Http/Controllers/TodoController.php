@@ -24,12 +24,32 @@ class TodoController extends Controller
 
 
 
-    // AJAX Requirments Start
+    // AJAX Requirements Start
+
+    //List Data
     public function ajaxList(Request $request){
-        $task = Task::where('user_id', Auth::id())->orderByDesc('id')->paginate(10);
-        return response()->json(['todos' => $task]);
+        
+        $tasks = Task::where('user_id', Auth::id())->orderByDesc('id')->get();
+        return response()->json(['tasks' => $tasks]);
     }
 
+    // Paginated Data
+    public function ajaxPaginate(Request $request) {
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+        $query = Task::where('user_id', Auth::id())->orderByDesc('id');
+        $tasks = $query->paginate($perPage, ['*'], 'page', $page);
+        return response()->json([
+            'tasks' => $tasks->items(),
+            'pagination' => [
+                'total' => $tasks->total(),
+                'per_page' => $tasks->perPage(),
+                'current_page' => $tasks->currentPage(),
+                'last_page' => $tasks->lastPage(),
+            ]
+        ]);
+    }
+    // Store Data
     public function ajaxStore(Request $request){
         $validated = request()->validate([
             'title' => 'required|min:3',
@@ -41,12 +61,11 @@ class TodoController extends Controller
             'description'=> $validated['description'],
             'status' => 'Pending',
             'user_id' => Auth::id(),
-
         ]);
-        return response()->json(['todos' => $task, 'message' => 'Task has been successfully created.']);
+        return response()->json(['task' => $task, 'message' => 'Task has been successfully created.']);
     }
 
-
+    // Update Data
     public function ajaxUpdate(Request $request, Task $todo){
         $this->authorize('update', $todo);
         $validated = $request->validate([
@@ -55,9 +74,18 @@ class TodoController extends Controller
             'status' => 'required|in:Pending,Completed',
         ]);
         $todo->update($validated);
-        return response()->json(['todos'=> $todo,'message'=> 'Task Update successfully.']);
+        return response()->json(['task'=> $todo,'message'=> 'Task updated successfully.']);
     }
 
+    // Toggle Task Status
+    public function ajaxToggle(Request $request, Task $todo) {
+        $this->authorize('update', $todo);
+        $todo->status = $todo->status === 'Pending' ? 'Completed' : 'Pending';
+        $todo->save();
+        return response()->json(['task' => $todo, 'message' => 'Task status changed!']);
+    }
+
+    // Delete Data
     public function ajaxDelete(Request $request, Task $todo){
         $this->authorize('delete', $todo);
         $todo->delete();

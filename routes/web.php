@@ -4,19 +4,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\ThemeController;
 
-// Redirect home to todos if logged in
+
 Route::get('/', function () {
     return auth()->check()
         ? redirect()->route('todos.index')
         : view('welcome');
 });
 
-// Auth-protected routes
+
 Route::middleware('auth')->group(function () {
-    // Resourceful routes (CRUD) for todos, except "show"
+    
     Route::resource('todos', TodoController::class)->except(['show']);
 
-    // Extra Todo features
+   
     Route::patch('/todos/{todo}/toggle', [TodoController::class, 'toggle'])
         ->name('todos.toggle');
     Route::delete('/todos', [TodoController::class, 'clearAll'])
@@ -29,10 +29,12 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/ajax/todos', [TodoController::class, 'ajaxList'])->name('ajax.todos.list');
+    Route::get('/ajax/todos/paginate', [TodoController::class, 'ajaxPaginate'])->name('ajax.todos.paginate');
     Route::post('/ajax/todos', [TodoController::class, 'ajaxStore'])->name('ajax.todos.store');
-    Route::patch('/ajax/todos/{todo}', [TodoController::class, 'ajaxUpdate'])->name('ajax.todos.update');
+    Route::put('/ajax/todos/{todo}', [TodoController::class, 'ajaxUpdate'])->name('ajax.todos.update');
     Route::delete('/ajax/todos/{todo}', [TodoController::class, 'ajaxDelete'])->name('ajax.todos.delete');
+    Route::post('/ajax/todos/{todo}/toggle', [TodoController::class, 'ajaxToggle'])->name('ajax.todos.toggle');
 });
 
-// Laravel authentication routes (Breeze/UI)
+// Laravel authentication routes
 require __DIR__.'/auth.php';
