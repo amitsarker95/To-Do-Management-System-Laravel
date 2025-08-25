@@ -22,6 +22,52 @@ class TodoController extends Controller
     return view('todos.index', compact('todos', 'theme'));
     }
 
+
+
+    // AJAX Requirments Start
+    public function ajaxList(Request $request){
+        $task = Task::where('user_id', Auth::id())->orderByDesc('id')->paginate(10);
+        return response()->json(['todos' => $task]);
+    }
+
+    public function ajaxStore(Request $request){
+        $validated = request()->validate([
+            'title' => 'required|min:3',
+            'description' => 'nullable|max:255',
+        ]);
+
+        $task = Task::create([
+            'title'=> $validated['title'],
+            'description'=> $validated['description'],
+            'status' => 'Pending',
+            'user_id' => Auth::id(),
+
+        ]);
+        return response()->json(['todos' => $task, 'message' => 'Task has been successfully created.']);
+    }
+
+
+    public function ajaxUpdate(Request $request, Task $todo){
+        $this->authorize('update', $todo);
+        $validated = $request->validate([
+            'title' => 'required|min:3',
+            'description' => 'nullable|max:255',
+            'status' => 'required|in:Pending,Completed',
+        ]);
+        $todo->update($validated);
+        return response()->json(['todos'=> $todo,'message'=> 'Task Update successfully.']);
+    }
+
+    public function ajaxDelete(Request $request, Task $todo){
+        $this->authorize('delete', $todo);
+        $todo->delete();
+        return response()->json(['message'=> 'Task Delete successfully.']);
+    }
+
+    //AJEX Requirments End
+
+
+
     public function store(TodoRequest $request)
     {
         Task::create([
